@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dungeon Math Hero: Mobile</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --bg-color: #222;
+            --control-bg: #111;
+            --accent: #f1c40f;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-color);
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            
+            /* iPhone Magic Fixes: */
+            height: 100dvh; /* Dynamic height avoids address bar issues */
+            width: 100vw;
+            position: fixed; /* Locks body to prevent rubber-band scrolling */
+            overflow: hidden;
+            touch-action: none; /* Disables standard touch gestures */
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%; /* Fill the fixed body */
+            max-width: 600px; /* Keep it looking good on iPad/Desktop */
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #333;
+            border-right: 2px solid #333;
+            box-sizing: border-box;
+        }
+
+        /* --- CANVAS --- */
+        canvas {
+            background: radial-gradient(circle at bottom, #2b1d3d 0%, #000 100%);
+            width: 100%;
+            flex-grow: 1; /* Takes all available space */
+            display: block;
+            border-bottom: 4px solid #000;
+            image-rendering: pixelated;
+        }
+
+        /* --- CONTROLS --- */
+        #controls-area {
+            /* Fixed height for controls, but flexible enough */
+            height: 40%; 
+            max-height: 300px; 
+            min-height: 220px;
+            
+            background: var(--control-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-top: 4px solid #444;
+            
+            /* Add padding for the iPhone Home Bar (Swipe bar) */
+            padding: 15px;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            box-sizing: border-box;
+        }
+
+        #math-problem {
+            text-align: center;
+            font-size: 1.8rem; /* Slightly smaller for mobile safety */
+            color: var(--accent);
+            margin-bottom: 15px;
+            text-shadow: 4px 4px 0 #000;
+            letter-spacing: 2px;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            height: 100%;
+            width: 100%;
+        }
+
+        .attack-btn {
+            background: #3498db;
+            border: 4px solid #2980b9;
+            box-shadow: inset 4px 4px 0 rgba(255,255,255,0.3), 4px 4px 0 #000;
+            border-radius: 8px; /* Slightly rounder for touch */
+            font-size: 1.5rem;
+            font-family: 'Press Start 2P', cursive;
+            color: #fff;
+            cursor: pointer;
+            position: relative;
+            
+            /* Remove tap delay on mobile */
+            touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .attack-btn:active { 
+            transform: translate(2px, 2px); 
+            box-shadow: inset 2px 2px 0 rgba(255,255,255,0.3), 2px 2px 0 #000;
+        }
+        
+        .attack-btn.wrong {
+            background: #e74c3c;
+            border-color: #c0392b;
+            animation: shakeBtn 0.3s;
+        }
+
+        /* --- HUD ELEMENTS --- */
+        .mute-btn {
+            position: absolute;
+            top: 10px; right: 10px;
+            font-size: 24px;
+            padding: 10px; /* Larger touch target */
+            cursor: pointer;
+            z-index: 50;
+            opacity: 0.6;
+        }
+
+        /* --- OVERLAYS --- */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .hidden { display: none !important; }
+        
+        h1 { color: var(--accent); font-size: 1.5rem; line-height: 1.5; margin-bottom: 20px; text-shadow: 4px 4px 0 #c0392b; }
+        p { line-height: 1.5; color: #aaa; font-size: 0.8rem; margin-bottom: 30px; }
+        
+        .big-btn {
+            padding: 20px 30px; 
+            font-size: 1rem; 
+            font-family: 'Press Start 2P', cursive;
+            background: #2ecc71; 
+            color: #000; 
+            border: 4px solid #27ae60;
+            box-shadow: inset 4px 4px 0 rgba(255,255,255,0.4), 4px 4px 0 #000;
+            cursor: pointer; 
+            margin-top: 20px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .shake { animation: shakeAnim 0.4s; }
+        @keyframes shakeAnim {
+            0%, 100% { transform: translate(0,0); }
+            20%, 60% { transform: translate(-5px, 5px); }
+            40%, 80% { transform: translate(5px, -5px); }
+        }
+        @keyframes shakeBtn { 0% {transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <div class="mute-btn" onclick="AudioSys.toggleMute()">🔊</div>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="controls-area">
+        <div id="math-problem">PRESS START</div>
+        <div id="buttons-grid" class="buttons-grid"></div>
+    </div>
+
+    <div id="start-screen" class="overlay">
+        <h1>DUNGEON<br>MATH HERO</h1>
+        <p>PROTECT THE CITY!</p>
+        <button class="big-btn" onclick="game.startLevel()">INSERT COIN</button>
+    </div>
+
+    <div id="win-screen" class="overlay hidden">
+        <h1 style="color:#2ecc71">VICTORY!</h1>
+        <div style="font-size: 3rem; margin: 20px;">🏆</div>
+        <button class="big-btn" onclick="game.nextLevel()">NEXT LEVEL</button>
+    </div>
+
+    <div id="lose-screen" class="overlay hidden">
+        <h1 style="color:#e74c3c">GAME OVER</h1>
+        <div style="font-size: 3rem; margin: 20px;">💀</div>
+        <p id="lose-reason">TRY AGAIN</p>
+        <button class="big-btn" style="background:#e74c3c; border-color:#c0392b;" onclick="game.restartLevel()">CONTINUE?</button>
+    </div>
+</div>
+
+<script>
+    // --- 8-BIT AUDIO ENGINE ---
+    const AudioSys = {
+        ctx: null,
+        isMuted: false,
+        bgmOscillators: [],
+        bgmInterval: null,
+        bgmNoteIndex: 0,
+        
+        init: function() {
+            if (!this.ctx) {
+                // Handle AudioContext for iOS/Webkit
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
+
+        toggleMute: function() {
+            this.isMuted = !this.isMuted;
+            document.querySelector('.mute-btn').innerText = this.isMuted ? '🔇' : '🔊';
+            if(this.isMuted) this.stopMusic();
+            else if (GameState.isRunning) this.startMusic();
+        },
+
+        playTone: function(freq, type, duration, vol=0.1) {
+            if (this.isMuted || !this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        },
+
+        playShoot: function() {
+            if (this.isMuted || !this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.15);
+        },
+
+        playExplosion: function() {
+            this.playTone(100, 'sawtooth', 0.2, 0.2);
+            this.playTone(80, 'square', 0.2, 0.2);
+            this.playTone(60, 'sawtooth', 0.3, 0.2);
+        },
+
+        playError: function() {
+            if (this.isMuted || !this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.3);
+            gain.gain.value = 0.2;
+            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.3);
+        },
+
+        playWin: function() {
+            this.stopMusic();
+            setTimeout(() => this.playTone(523.25, 'square', 0.1), 0);
+            setTimeout(() => this.playTone(659.25, 'square', 0.1), 150);
+            setTimeout(() => this.playTone(783.99, 'square', 0.1), 300);
+            setTimeout(() => this.playTone(1046.50, 'square', 0.6), 450);
+        },
+
+        playLose: function() {
+            this.stopMusic();
+            setTimeout(() => this.playTone(300, 'triangle', 0.3), 0);
+            setTimeout(() => this.playTone(280, 'triangle', 0.3), 300);
+            setTimeout(() => this.playTone(200, 'triangle', 0.8), 600);
+        },
+
+        startMusic: function() {
+            if (this.isMuted || !this.ctx || this.bgmInterval) return;
+            const bassLine = [130.81, 130.81, 196.00, 130.81, 220.00, 220.00, 164.81, 196.00];
+            const leadLine = [523.25, 0, 659.25, 0, 783.99, 659.25, 523.25, 0];
+            this.bgmNoteIndex = 0;
+            const tempo = 250; 
+            this.bgmInterval = setInterval(() => {
+                if(!GameState.isRunning) return;
+                const bassFreq = bassLine[this.bgmNoteIndex % bassLine.length];
+                this.playTone(bassFreq, 'triangle', 0.2, 0.15); 
+                const leadFreq = leadLine[this.bgmNoteIndex % leadLine.length];
+                if(leadFreq > 0) {
+                    this.playTone(leadFreq, 'square', 0.1, 0.05); 
+                }
+                this.bgmNoteIndex++;
+            }, tempo);
+        },
+
+        stopMusic: function() {
+            if (this.bgmInterval) {
+                clearInterval(this.bgmInterval);
+                this.bgmInterval = null;
+            }
+        }
+    };
+
+
+    // --- GAME ENGINE ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let frames = 0;
+
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        // Set actual canvas size to match display size for sharpness
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+    // Listen for resize and orientation change
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+    resizeCanvas();
+
+    const GameState = {
+        isRunning: false,
+        level: 1,
+        currentAnswer: 0,
+        heroHP: 100,
+        maxHeroHP: 100
+    };
+
+    let monster = null;
+    let projectiles = [];
+    let particles = [];
+
+    // --- GAME OBJECTS ---
+    const hero = {
+        emoji: '🛡️',
+        x: 0, y: 0, size: 50,
+        draw() {
+            this.x = canvas.width / 2;
+            this.y = canvas.height - 40;
+            ctx.font = this.size + "px 'Press Start 2P'";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.emoji, this.x, this.y);
+            // Ground
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(this.x - 50, this.y + 25, 100, 4);
+        }
+    };
+
+    class Monster {
+        constructor(level) {
+            const types = ['🐙', '👹', '👽', '🤖', '🐲', '💀'];
+            this.emoji = types[(level - 1) % types.length];
+            this.x = canvas.width / 2;
+            this.y = 80;
+            this.size = 70;
+            this.hp = 100;
+            this.maxHP = 100;
+            this.descentSpeed = 0.1 + (level * 0.04); 
+            this.wobble = Math.random() * 10;
+        }
+
+        update() {
+            this.y += this.descentSpeed;
+            this.visualX = this.x + Math.sin(frames * 0.05) * 10;
+        }
+
+        pushBack() {
+            this.y -= 40;
+            if (this.y < 70) this.y = 70;
+        }
+
+        pullDown() {
+            this.y += 35;
+        }
+
+        draw() {
+            ctx.font = this.size + "px 'Press Start 2P'";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.emoji, this.visualX, this.y);
+            
+            // Retro HP Bar
+            const barW = 80;
+            const barH = 6;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(this.visualX - barW/2, this.y - 50, barW, barH);
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(this.visualX - barW/2, this.y - 50, (this.hp/this.maxHP)*barW, barH);
+        }
+    }
+
+    class Projectile {
+        constructor(x, y, isPlayer) {
+            this.x = x; this.y = y; this.isPlayer = isPlayer;
+            this.emoji = isPlayer ? '⚡' : '🔥';
+            this.speed = isPlayer ? -12 : 8;
+            this.dead = false;
+        }
+        update() {
+            this.y += this.speed;
+            if (this.y < -50 || this.y > canvas.height + 50) this.dead = true;
+        }
+        draw() {
+            ctx.font = "24px 'Press Start 2P'";
+            ctx.fillText(this.emoji, this.x, this.y);
+        }
+    }
+
+    class Particle {
+        constructor(x, y, color) {
+            this.x = x; this.y = y; this.color = color;
+            this.vx = (Math.random() - 0.5) * 10;
+            this.vy = (Math.random() - 0.5) * 10;
+            this.life = 1.0;
+            this.size = Math.random() * 8 + 4;
+        }
+        update() {
+            this.x += this.vx; this.y += this.vy; this.vy += 0.5;
+            this.life -= 0.05;
+        }
+        draw() {
+            ctx.globalAlpha = this.life;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+            ctx.globalAlpha = 1.0;
+        }
+    }
+
+    // --- MAIN LOOP ---
+    function animate() {
+        if (!GameState.isRunning) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frames++;
+
+        // Danger Zone
+        if (monster && monster.y > canvas.height * 0.65) {
+            if(frames % 20 < 10) { 
+                ctx.fillStyle = "rgba(231, 76, 60, 0.2)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        hero.draw();
+        
+        if (monster) {
+            monster.update();
+            monster.draw();
+            if (monster.y + monster.size/3 > hero.y - hero.size/2) {
+                game.lose("BASE DESTROYED!");
+                return;
+            }
+        }
+
+        projectiles.forEach(p => {
+            p.update();
+            p.draw();
+            
+            // Hit Monster
+            if (p.isPlayer && monster && Math.abs(p.x - monster.x) < 50 && Math.abs(p.y - monster.y) < 50) {
+                p.dead = true;
+                monster.pushBack();
+                damageMonster(20);
+                AudioSys.playExplosion(); 
+                spawnExplosion(p.x, p.y, '#f1c40f');
+            }
+            // Hit Hero
+            if (!p.isPlayer && Math.abs(p.x - hero.x) < 40 && Math.abs(p.y - hero.y) < 40) {
+                p.dead = true;
+                damageHero(25);
+                AudioSys.playError(); 
+                spawnExplosion(p.x, p.y, '#e74c3c');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 400);
+            }
+        });
+
+        particles.forEach(p => { p.update(); p.draw(); });
+        projectiles = projectiles.filter(p => !p.dead);
+        particles = particles.filter(p => p.life > 0);
+
+        drawHUD();
+        requestAnimationFrame(animate);
+    }
+
+    function drawHUD() {
+        // HP Bar
+        ctx.fillStyle = '#222';
+        ctx.fillRect(10, 10, 150, 15);
+        ctx.fillStyle = GameState.heroHP > 30 ? '#2ecc71' : '#e74c3c';
+        ctx.fillRect(10, 10, (GameState.heroHP/100)*150, 15);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = "12px 'Press Start 2P'";
+        ctx.textAlign = 'left';
+        ctx.fillText(`LVL ${GameState.level}`, 10, 45);
+    }
+
+    // --- GAME LOGIC ---
+    function damageMonster(amt) {
+        if (!monster) return;
+        monster.hp -= amt;
+        if (monster.hp <= 0) {
+            monster.hp = 0;
+            spawnExplosion(monster.x, monster.y, '#f1c40f', 50);
+            monster = null;
+            setTimeout(() => game.win(), 500);
+        }
+    }
+
+    function damageHero(amt) {
+        GameState.heroHP -= amt;
+        if (GameState.heroHP <= 0) {
+            GameState.heroHP = 0;
+            game.lose("SHIELD DEPLETED");
+        }
+    }
+
+    function spawnExplosion(x, y, color, count=15) {
+        for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
+    }
+
+    const game = {
+        startLevel: function() {
+            AudioSys.init(); 
+            AudioSys.startMusic(); 
+
+            document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+            GameState.isRunning = true;
+            GameState.heroHP = 100;
+            monster = new Monster(GameState.level);
+            projectiles = [];
+            particles = [];
+            
+            // Initial resize to be sure
+            resizeCanvas();
+            
+            this.nextQuestion();
+            animate();
+        },
+        nextLevel: function() {
+            GameState.level++;
+            this.startLevel();
+        },
+        restartLevel: function() {
+            this.startLevel();
+        },
+        win: function() {
+            GameState.isRunning = false;
+            AudioSys.playWin(); 
+            document.getElementById('win-screen').classList.remove('hidden');
+        },
+        lose: function(reason) {
+            GameState.isRunning = false;
+            AudioSys.playLose(); 
+            document.getElementById('lose-reason').innerText = reason;
+            document.getElementById('lose-screen').classList.remove('hidden');
+        },
+        nextQuestion: function() {
+            if (!monster) return;
+            
+            let mults = [2,5,10];
+            if(GameState.level > 2) mults = [3,4];
+            if(GameState.level > 5) mults = [6,7,8,9];
+            if(GameState.level > 10) mults = [2,3,4,5,6,7,8,9,11,12];
+
+            const n1 = mults[Math.floor(Math.random()*mults.length)];
+            const n2 = Math.floor(Math.random()*9)+2;
+            GameState.currentAnswer = n1 * n2;
+            
+            document.getElementById('math-problem').innerText = `${n1} × ${n2}`;
+            this.generateButtons(GameState.currentAnswer, n1);
+        },
+        generateButtons: function(correct, base) {
+            let opts = new Set([correct]);
+            while(opts.size < 4) {
+                if(Math.random()>0.5) opts.add(correct + (Math.random()>0.5?base:-base));
+                else opts.add(correct + Math.floor(Math.random()*10)-5);
+            }
+            let arr = Array.from(opts).filter(n => n > 0).slice(0,4);
+            while(arr.length < 4) arr.push(correct + arr.length + 1);
+            arr.sort(()=>Math.random()-0.5);
+
+            const grid = document.getElementById('buttons-grid');
+            grid.innerHTML = '';
+            arr.forEach(num => {
+                const btn = document.createElement('button');
+                btn.className = 'attack-btn';
+                btn.innerText = num;
+                
+                btn.onclick = function() {
+                    if(!GameState.isRunning || !monster) return;
+                    
+                    if(num === GameState.currentAnswer) {
+                        AudioSys.playShoot(); 
+                        projectiles.push(new Projectile(hero.x, hero.y - 30, true));
+                        game.nextQuestion();
+                    } else {
+                        AudioSys.playError(); 
+                        monster.pullDown(); 
+                        projectiles.push(new Projectile(monster.x, monster.y + 30, false));
+                        btn.classList.add('wrong');
+                        setTimeout(() => btn.classList.remove('wrong'), 300);
+                    }
+                };
+                grid.appendChild(btn);
+            });
+        }
+    };
+
+    window.game = game;
+
+</script>
+</body>
+</html>

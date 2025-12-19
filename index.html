@@ -8,95 +8,70 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Math Hero">
+    <meta name="theme-color" content="#000000">
     
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' style='background:%23111'><rect width='100' height='100' rx='20' fill='%231a1a2e'/><text y='70' x='50' font-size='60' text-anchor='middle'>🛡️</text></svg>">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%234a0e4e;stop-opacity:1' /><stop offset='100%' style='stop-color:%23111;stop-opacity:1' /></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23grad)'/><text y='72' x='50' font-size='65' text-anchor='middle'>🐉</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐉</text></svg>">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
         :root {
-            --bg-color: #222;
+            --bg-color: #000000;
             --control-bg: #111;
             --accent: #f1c40f;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text-muted: #888;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background: var(--bg-color);
             color: #fff;
             font-family: 'Press Start 2P', cursive;
-            
-            /* CRITICAL MOBILE FIXES */
-            height: 100dvh; /* Use dynamic viewport height */
-            width: 100vw;
-            position: fixed; /* Lock body scrolling */
-            overflow: hidden;
-            touch-action: none; /* Disable native touch gestures */
-            
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            height: 100dvh; width: 100vw;
+            position: fixed; overflow: hidden;
+            touch-action: none;
+            display: flex; flex-direction: column; align-items: center;
         }
 
         #game-wrapper {
             position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 600px; /* Tablet limit */
-            display: flex;
-            flex-direction: column; /* Stack Canvas on top of Controls */
-            border-left: 2px solid #333;
-            border-right: 2px solid #333;
+            width: 100%; height: 100%;
+            max-width: 600px;
+            display: flex; flex-direction: column;
+            border-left: 2px solid #111; border-right: 2px solid #111;
         }
 
-        /* --- CANVAS (FLEX GROW) --- */
         canvas {
             background: radial-gradient(circle at bottom, #2b1d3d 0%, #000 100%);
-            width: 100%;
-            flex-grow: 1; /* This makes the canvas take ALL available space remaining */
-            height: 0; /* Crucial: allows flex-grow to work properly */
-            display: block;
-            border-bottom: 4px solid #000;
+            width: 100%; flex-grow: 1; height: 0;
+            display: block; border-bottom: 4px solid #000;
             image-rendering: pixelated;
         }
 
-        /* --- CONTROLS (FIXED BOTTOM) --- */
         #controls-area {
-            /* Let controls define their own height based on content */
-            flex-shrink: 0; 
+            flex-shrink: 0;
             background: var(--control-bg);
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             justify-content: center;
-            border-top: 4px solid #444;
-            
+            border-top: 4px solid #222;
             padding: 10px 15px;
-            /* Extra padding for iPhone Home Bar (The swipe line) */
-            padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
         }
 
         #math-problem {
-            text-align: center;
-            font-size: 1.5rem; /* Slightly smaller */
-            color: var(--accent);
-            margin-bottom: 10px;
-            text-shadow: 4px 4px 0 #000;
-            letter-spacing: 2px;
+            text-align: center; font-size: 1.4rem;
+            color: var(--accent); margin-bottom: 12px;
+            text-shadow: 3px 3px 0 #000; letter-spacing: 2px;
         }
 
         .buttons-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-            /* Limit height of buttons area so it fits on small screens */
-            height: 120px; 
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; width: 100%; height: 120px;
         }
 
         .attack-btn {
@@ -104,80 +79,85 @@
             border: 4px solid #2980b9;
             box-shadow: inset 3px 3px 0 rgba(255,255,255,0.3), 3px 3px 0 #000;
             border-radius: 8px;
-            font-size: 1.2rem; /* Smaller font for buttons */
-            font-family: 'Press Start 2P', cursive;
-            color: #fff;
-            cursor: pointer;
-            position: relative;
-            
-            /* Improve touch response */
-            touch-action: manipulation; 
-            -webkit-tap-highlight-color: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 1.2rem; font-family: 'Press Start 2P', cursive;
+            color: #fff; cursor: pointer;
+            touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+            display: flex; align-items: center; justify-content: center;
         }
-        
-        .attack-btn:active { 
-            transform: translate(2px, 2px); 
-            box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3), 1px 1px 0 #000;
-        }
-        
-        .attack-btn.wrong {
-            background: #e74c3c;
-            border-color: #c0392b;
-            animation: shakeBtn 0.3s;
-        }
+        .attack-btn:active { transform: translate(2px, 2px); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3), 1px 1px 0 #000; }
+        .attack-btn.wrong { background: var(--danger); border-color: #c0392b; animation: shakeBtn 0.3s; }
 
-        /* --- HUD --- */
-        .mute-btn {
-            position: absolute;
-            top: max(10px, env(safe-area-inset-top)); /* Safe area for top notch */
-            right: 10px;
-            font-size: 24px;
-            padding: 10px;
-            cursor: pointer;
-            z-index: 50;
-            opacity: 0.6;
+        .icon-btn {
+            position: absolute; top: max(15px, env(safe-area-inset-top));
+            font-size: 20px; padding: 10px; cursor: pointer;
+            z-index: 50; background: rgba(0,0,0,0.5); border-radius: 50%;
+            width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;
+            border: 2px solid #555;
         }
+        .mute-btn { right: 15px; }
 
-        /* --- OVERLAYS --- */
         .overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.92);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 20;
-            text-align: center;
-            padding: 20px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 20; text-align: center; padding: 20px;
         }
         .hidden { display: none !important; }
         
-        h1 { color: var(--accent); font-size: 1.5rem; line-height: 1.5; margin-bottom: 20px; text-shadow: 4px 4px 0 #c0392b; }
-        p { line-height: 1.5; color: #aaa; font-size: 0.8rem; margin-bottom: 30px; }
+        h1 { color: var(--accent); font-size: 1.4rem; line-height: 1.5; margin-bottom: 10px; text-shadow: 4px 4px 0 #c0392b; }
+        p { line-height: 1.6; color: #aaa; font-size: 0.7rem; margin-bottom: 20px; max-width: 80%; }
         
+        /* --- STATS STYLING --- */
+        .stats-box {
+            background: #111; border: 2px solid #333;
+            padding: 15px; border-radius: 10px;
+            margin-bottom: 20px; width: 100%; max-width: 350px;
+        }
+        .stat-row {
+            display: flex; justify-content: space-between;
+            margin-bottom: 8px; font-size: 0.7rem; color: #ddd;
+        }
+        .stat-val { color: var(--accent); }
+
+        /* History Table */
+        .history-container {
+            width: 100%;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid #333;
+        }
+        .history-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            padding: 8px 0;
+            font-size: 0.6rem;
+            border-bottom: 1px solid #222;
+        }
+        .history-header {
+            color: #888;
+            font-size: 0.5rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .res-win { color: var(--success); }
+        .res-loss { color: var(--danger); }
+
         .big-btn {
-            padding: 15px 25px; 
-            font-size: 1rem; 
-            font-family: 'Press Start 2P', cursive;
-            background: #2ecc71; 
-            color: #000; 
+            padding: 15px 20px; width: 100%; max-width: 250px;
+            font-size: 0.9rem; font-family: 'Press Start 2P', cursive;
+            background: var(--success); color: #000;
             border: 4px solid #27ae60;
-            box-shadow: inset 4px 4px 0 rgba(255,255,255,0.4), 4px 4px 0 #000;
-            cursor: pointer; 
-            margin-top: 20px;
+            box-shadow: inset 3px 3px 0 rgba(255,255,255,0.4), 3px 3px 0 #000;
+            cursor: pointer; margin-top: 10px;
             -webkit-tap-highlight-color: transparent;
         }
+        .secondary-btn { background: #3498db; border-color: #2980b9; margin-top: 15px; }
+        .back-btn { background: #555; border-color: #333; color: #fff; margin-top: 15px; }
 
         .shake { animation: shakeAnim 0.4s; }
-        @keyframes shakeAnim {
-            0%, 100% { transform: translate(0,0); }
-            20%, 60% { transform: translate(-5px, 5px); }
-            40%, 80% { transform: translate(5px, -5px); }
-        }
+        @keyframes shakeAnim { 0%, 100% { transform: translate(0,0); } 20%, 60% { transform: translate(-5px, 5px); } 40%, 80% { transform: translate(5px, -5px); } }
         @keyframes shakeBtn { 0% {transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
 
     </style>
@@ -185,7 +165,7 @@
 <body>
 
 <div id="game-wrapper">
-    <div class="mute-btn" onclick="AudioSys.toggleMute()">🔊</div>
+    <div class="icon-btn mute-btn" onclick="AudioSys.toggleMute()">🔊</div>
     <canvas id="gameCanvas"></canvas>
     
     <div id="controls-area">
@@ -195,140 +175,208 @@
 
     <div id="start-screen" class="overlay">
         <h1>DUNGEON<br>MATH HERO</h1>
-        <p>PROTECT THE CITY!</p>
-        <button class="big-btn" onclick="game.startLevel()">INSERT COIN</button>
+        
+        <div class="stats-box">
+            <div class="stat-row">
+                <span>LEVEL</span>
+                <span class="stat-val" id="home-level">1</span>
+            </div>
+            <div class="stat-row">
+                <span>GAMES</span>
+                <span class="stat-val" id="home-games">0</span>
+            </div>
+        </div>
+
+        <button class="big-btn" onclick="game.startLevel()">PLAY LEVEL <span id="btn-level-num">1</span></button>
+        <button class="big-btn secondary-btn" onclick="game.showStats()">VIEW STATS</button>
+    </div>
+
+    <div id="stats-screen" class="overlay hidden">
+        <h1 style="font-size: 1.2rem; margin-bottom: 20px;">LAST 10 GAMES</h1>
+        
+        <div class="stats-box" style="text-align: left; max-width: 400px;">
+            <div class="stat-row">
+                <span>GLOBAL ACCURACY</span>
+                <span class="stat-val" id="stat-accuracy">100%</span>
+            </div>
+            
+            <div class="history-container">
+                <div class="history-row history-header">
+                    <span>LVL</span>
+                    <span>RES</span>
+                    <span>ACC</span>
+                    <span>TIME</span>
+                </div>
+                <div id="history-list">
+                    </div>
+            </div>
+        </div>
+
+        <button class="big-btn back-btn" onclick="game.showHome()">BACK</button>
+        <div style="margin-top:20px; font-size: 0.6rem; color:#555; text-decoration: underline; cursor: pointer;" onclick="Storage.reset()">Reset All Data</div>
     </div>
 
     <div id="win-screen" class="overlay hidden">
         <h1 style="color:#2ecc71">VICTORY!</h1>
-        <div style="font-size: 3rem; margin: 20px;">🏆</div>
+        <div style="font-size: 4rem; margin: 10px;">🏆</div>
+        <p>Level Complete!</p>
         <button class="big-btn" onclick="game.nextLevel()">NEXT LEVEL</button>
+        <button class="big-btn secondary-btn" onclick="game.showHome()">MENU</button>
     </div>
 
     <div id="lose-screen" class="overlay hidden">
-        <h1 style="color:#e74c3c">GAME OVER</h1>
-        <div style="font-size: 3rem; margin: 20px;">💀</div>
-        <p id="lose-reason">TRY AGAIN</p>
-        <button class="big-btn" style="background:#e74c3c; border-color:#c0392b;" onclick="game.restartLevel()">CONTINUE?</button>
+        <h1 style="color:#e74c3c">DEFEATED</h1>
+        <div style="font-size: 4rem; margin: 10px;">💀</div>
+        <p id="lose-reason">Try Again</p>
+        <button class="big-btn" style="background:#e74c3c; border-color:#c0392b;" onclick="game.restartLevel()">RETRY</button>
+        <button class="big-btn secondary-btn" onclick="game.showHome()">MENU</button>
     </div>
 </div>
 
 <script>
-    // --- 8-BIT AUDIO ENGINE ---
+    // --- STORAGE MANAGER ---
+    const Storage = {
+        key: 'mathHeroData_v2', // Updated key version
+        data: {
+            level: 1,
+            gamesPlayed: 0,
+            hits: 0,
+            misses: 0,
+            history: [] // Array of { level, result, acc, time }
+        },
+        load: function() {
+            const saved = localStorage.getItem(this.key);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                // Merge in case we added new fields to existing data
+                this.data = { ...this.data, ...parsed };
+            }
+            this.updateUI();
+        },
+        save: function() {
+            localStorage.setItem(this.key, JSON.stringify(this.data));
+            this.updateUI();
+        },
+        reset: function() {
+            if(confirm("Reset all stats and history?")) {
+                localStorage.removeItem(this.key);
+                location.reload();
+            }
+        },
+        addSession: function(isWin, level, sessionHits, sessionMisses, timeSecs) {
+            this.data.gamesPlayed++;
+            
+            // Calculate Session Accuracy
+            const total = sessionHits + sessionMisses;
+            const acc = total === 0 ? 0 : Math.round((sessionHits / total) * 100);
+
+            // Create Session Record
+            const session = {
+                lvl: level,
+                win: isWin,
+                acc: acc,
+                time: timeSecs
+            };
+
+            // Add to history (Max 10)
+            this.data.history.unshift(session);
+            if(this.data.history.length > 10) {
+                this.data.history.pop();
+            }
+            
+            this.save();
+        },
+        recordGlobalStats: function(isHit) {
+            if(isHit) this.data.hits++;
+            else this.data.misses++;
+            this.save();
+        },
+        levelUp: function() {
+            this.data.level++;
+            this.save();
+        },
+        updateUI: function() {
+            // Home Screen
+            const homeLevel = document.getElementById('home-level');
+            if(homeLevel) {
+                homeLevel.innerText = this.data.level;
+                document.getElementById('btn-level-num').innerText = this.data.level;
+                document.getElementById('home-games').innerText = this.data.gamesPlayed;
+            }
+
+            // Stats Screen - Global Accuracy
+            const total = this.data.hits + this.data.misses;
+            let acc = 100;
+            if (total > 0) acc = Math.round((this.data.hits / total) * 100);
+            document.getElementById('stat-accuracy').innerText = acc + "%";
+
+            // Stats Screen - History List
+            const listEl = document.getElementById('history-list');
+            if(listEl) {
+                listEl.innerHTML = '';
+                if(this.data.history.length === 0) {
+                    listEl.innerHTML = '<div style="padding:10px; font-size:0.6rem; color:#666; text-align:center;">No games played yet.</div>';
+                } else {
+                    this.data.history.forEach(s => {
+                        const row = document.createElement('div');
+                        row.className = 'history-row';
+                        row.innerHTML = `
+                            <span>${s.lvl}</span>
+                            <span class="${s.win ? 'res-win' : 'res-loss'}">${s.win ? 'WIN' : 'LOSS'}</span>
+                            <span>${s.acc}%</span>
+                            <span>${s.time}s</span>
+                        `;
+                        listEl.appendChild(row);
+                    });
+                }
+            }
+        }
+    };
+
+    // --- AUDIO ENGINE ---
     const AudioSys = {
-        ctx: null,
-        isMuted: false,
-        bgmInterval: null,
-        bgmNoteIndex: 0,
-        
+        ctx: null, isMuted: false, bgmInterval: null, bgmNoteIndex: 0,
         init: function() {
             if (!this.ctx) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AudioContext();
             }
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-            }
+            if (this.ctx.state === 'suspended') this.ctx.resume();
         },
-
         toggleMute: function() {
             this.isMuted = !this.isMuted;
             document.querySelector('.mute-btn').innerText = this.isMuted ? '🔇' : '🔊';
             if(this.isMuted) this.stopMusic();
             else if (GameState.isRunning) this.startMusic();
         },
-
         playTone: function(freq, type, duration, vol=0.1) {
             if (this.isMuted || !this.ctx) return;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
+            osc.type = type; osc.frequency.value = freq;
+            osc.connect(gain); gain.connect(this.ctx.destination);
             gain.gain.setValueAtTime(vol, this.ctx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-            osc.start();
-            osc.stop(this.ctx.currentTime + duration);
+            osc.start(); osc.stop(this.ctx.currentTime + duration);
         },
-
-        playShoot: function() {
-            if (this.isMuted || !this.ctx) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(600, this.ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.15);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.15);
-        },
-
-        playExplosion: function() {
-            this.playTone(100, 'sawtooth', 0.2, 0.2);
-            this.playTone(80, 'square', 0.2, 0.2);
-            this.playTone(60, 'sawtooth', 0.3, 0.2);
-        },
-
-        playError: function() {
-            if (this.isMuted || !this.ctx) return;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-            osc.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.3);
-            gain.gain.value = 0.2;
-            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.3);
-        },
-
-        playWin: function() {
-            this.stopMusic();
-            setTimeout(() => this.playTone(523.25, 'square', 0.1), 0);
-            setTimeout(() => this.playTone(659.25, 'square', 0.1), 150);
-            setTimeout(() => this.playTone(783.99, 'square', 0.1), 300);
-            setTimeout(() => this.playTone(1046.50, 'square', 0.6), 450);
-        },
-
-        playLose: function() {
-            this.stopMusic();
-            setTimeout(() => this.playTone(300, 'triangle', 0.3), 0);
-            setTimeout(() => this.playTone(280, 'triangle', 0.3), 300);
-            setTimeout(() => this.playTone(200, 'triangle', 0.8), 600);
-        },
-
+        playShoot: function() { this.playTone(600, 'square', 0.15, 0.1); },
+        playExplosion: function() { this.playTone(100, 'sawtooth', 0.2, 0.2); this.playTone(60, 'square', 0.2, 0.2); },
+        playError: function() { this.playTone(150, 'sawtooth', 0.3, 0.2); },
+        playWin: function() { this.stopMusic(); setTimeout(()=>this.playTone(523, 'square', 0.1),0); setTimeout(()=>this.playTone(659, 'square', 0.1),150); setTimeout(()=>this.playTone(783, 'square', 0.1),300); setTimeout(()=>this.playTone(1046, 'square', 0.6),450); },
+        playLose: function() { this.stopMusic(); setTimeout(()=>this.playTone(300, 'triangle', 0.3),0); setTimeout(()=>this.playTone(280, 'triangle', 0.3),300); setTimeout(()=>this.playTone(200, 'triangle', 0.8),600); },
         startMusic: function() {
             if (this.isMuted || !this.ctx || this.bgmInterval) return;
-            const bassLine = [130.81, 130.81, 196.00, 130.81, 220.00, 220.00, 164.81, 196.00];
-            const leadLine = [523.25, 0, 659.25, 0, 783.99, 659.25, 523.25, 0];
+            const bass=[130,130,196,130,220,220,164,196]; const lead=[523,0,659,0,783,659,523,0];
             this.bgmNoteIndex = 0;
-            const tempo = 250; 
             this.bgmInterval = setInterval(() => {
                 if(!GameState.isRunning) return;
-                const bassFreq = bassLine[this.bgmNoteIndex % bassLine.length];
-                this.playTone(bassFreq, 'triangle', 0.2, 0.15); 
-                const leadFreq = leadLine[this.bgmNoteIndex % leadLine.length];
-                if(leadFreq > 0) {
-                    this.playTone(leadFreq, 'square', 0.1, 0.05); 
-                }
+                this.playTone(bass[this.bgmNoteIndex%8], 'triangle', 0.2, 0.15);
+                if(lead[this.bgmNoteIndex%8]>0) this.playTone(lead[this.bgmNoteIndex%8], 'square', 0.1, 0.05);
                 this.bgmNoteIndex++;
-            }, tempo);
+            }, 250);
         },
-
-        stopMusic: function() {
-            if (this.bgmInterval) {
-                clearInterval(this.bgmInterval);
-                this.bgmInterval = null;
-            }
-        }
+        stopMusic: function() { if (this.bgmInterval) { clearInterval(this.bgmInterval); this.bgmInterval = null; } }
     };
-
 
     // --- GAME ENGINE ---
     const canvas = document.getElementById('gameCanvas');
@@ -337,9 +385,7 @@
 
     function resizeCanvas() {
         const rect = canvas.getBoundingClientRect();
-        // Force integer values for crisp pixel art
-        canvas.width = Math.floor(rect.width);
-        canvas.height = Math.floor(rect.height);
+        canvas.width = Math.floor(rect.width); canvas.height = Math.floor(rect.height);
     }
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
@@ -348,9 +394,13 @@
     const GameState = {
         isRunning: false,
         level: 1,
-        currentAnswer: 0,
         heroHP: 100,
-        maxHeroHP: 100
+        maxHeroHP: 100,
+        currentAnswer: 0,
+        // Session Stats
+        startTime: 0,
+        sessionHits: 0,
+        sessionMisses: 0
     };
 
     let monster = null;
@@ -359,18 +409,12 @@
 
     // --- GAME OBJECTS ---
     const hero = {
-        emoji: '🛡️',
-        x: 0, y: 0, size: 50,
+        emoji: '🛡️', x: 0, y: 0, size: 50,
         draw() {
-            this.x = canvas.width / 2;
-            this.y = canvas.height - 40;
-            ctx.font = this.size + "px 'Press Start 2P'";
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            this.x = canvas.width / 2; this.y = canvas.height - 40;
+            ctx.font = this.size + "px 'Press Start 2P'"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(this.emoji, this.x, this.y);
-            // Ground
-            ctx.fillStyle = "#2ecc71";
-            ctx.fillRect(this.x - 50, this.y + 25, 100, 4);
+            ctx.fillStyle = "#2ecc71"; ctx.fillRect(this.x - 50, this.y + 25, 100, 4);
         }
     };
 
@@ -378,80 +422,39 @@
         constructor(level) {
             const types = ['🐙', '👹', '👽', '🤖', '🐲', '💀'];
             this.emoji = types[(level - 1) % types.length];
-            this.x = canvas.width / 2;
-            this.y = 80;
-            this.size = 70;
-            this.hp = 100;
-            this.maxHP = 100;
+            this.x = canvas.width / 2; this.y = 80; this.size = 70;
+            this.hp = 100; this.maxHP = 100;
             this.descentSpeed = 0.1 + (level * 0.04); 
-            this.wobble = Math.random() * 10;
         }
-
-        update() {
-            this.y += this.descentSpeed;
-            this.visualX = this.x + Math.sin(frames * 0.05) * 10;
-        }
-
-        pushBack() {
-            this.y -= 40;
-            if (this.y < 70) this.y = 70;
-        }
-
-        pullDown() {
-            this.y += 35;
-        }
-
+        update() { this.y += this.descentSpeed; this.visualX = this.x + Math.sin(frames * 0.05) * 10; }
+        pushBack() { this.y -= 40; if (this.y < 70) this.y = 70; }
+        pullDown() { this.y += 35; }
         draw() {
-            ctx.font = this.size + "px 'Press Start 2P'";
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.font = this.size + "px 'Press Start 2P'"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(this.emoji, this.visualX, this.y);
-            
-            // Retro HP Bar
             const barW = 80;
-            const barH = 6;
-            ctx.fillStyle = '#000';
-            ctx.fillRect(this.visualX - barW/2, this.y - 50, barW, barH);
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(this.visualX - barW/2, this.y - 50, (this.hp/this.maxHP)*barW, barH);
+            ctx.fillStyle = '#000'; ctx.fillRect(this.visualX - barW/2, this.y - 50, barW, 6);
+            ctx.fillStyle = '#e74c3c'; ctx.fillRect(this.visualX - barW/2, this.y - 50, (this.hp/this.maxHP)*barW, 6);
         }
     }
 
     class Projectile {
         constructor(x, y, isPlayer) {
             this.x = x; this.y = y; this.isPlayer = isPlayer;
-            this.emoji = isPlayer ? '⚡' : '🔥';
-            this.speed = isPlayer ? -12 : 8;
-            this.dead = false;
+            this.emoji = isPlayer ? '⚡' : '🔥'; this.speed = isPlayer ? -12 : 8; this.dead = false;
         }
-        update() {
-            this.y += this.speed;
-            if (this.y < -50 || this.y > canvas.height + 50) this.dead = true;
-        }
-        draw() {
-            ctx.font = "24px 'Press Start 2P'";
-            ctx.fillText(this.emoji, this.x, this.y);
-        }
+        update() { this.y += this.speed; if (this.y < -50 || this.y > canvas.height + 50) this.dead = true; }
+        draw() { ctx.font = "24px 'Press Start 2P'"; ctx.fillText(this.emoji, this.x, this.y); }
     }
 
     class Particle {
         constructor(x, y, color) {
             this.x = x; this.y = y; this.color = color;
-            this.vx = (Math.random() - 0.5) * 10;
-            this.vy = (Math.random() - 0.5) * 10;
-            this.life = 1.0;
-            this.size = Math.random() * 8 + 4;
+            this.vx = (Math.random() - 0.5) * 10; this.vy = (Math.random() - 0.5) * 10;
+            this.life = 1.0; this.size = Math.random() * 8 + 4;
         }
-        update() {
-            this.x += this.vx; this.y += this.vy; this.vy += 0.5;
-            this.life -= 0.05;
-        }
-        draw() {
-            ctx.globalAlpha = this.life;
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.size, this.size);
-            ctx.globalAlpha = 1.0;
-        }
+        update() { this.x += this.vx; this.y += this.vy; this.vy += 0.5; this.life -= 0.05; }
+        draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.size, this.size); ctx.globalAlpha = 1.0; }
     }
 
     // --- MAIN LOOP ---
@@ -460,45 +463,27 @@
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         frames++;
 
-        // Danger Zone
         if (monster && monster.y > canvas.height * 0.65) {
-            if(frames % 20 < 10) { 
-                ctx.fillStyle = "rgba(231, 76, 60, 0.2)";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
+            if(frames % 20 < 10) { ctx.fillStyle = "rgba(231, 76, 60, 0.2)"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
         }
 
         hero.draw();
         
         if (monster) {
-            monster.update();
-            monster.draw();
-            if (monster.y + monster.size/3 > hero.y - hero.size/2) {
-                game.lose("BASE DESTROYED!");
-                return;
-            }
+            monster.update(); monster.draw();
+            if (monster.y + monster.size/3 > hero.y - hero.size/2) { game.lose("BASE DESTROYED!"); return; }
         }
 
         projectiles.forEach(p => {
-            p.update();
-            p.draw();
-            
-            // Hit Monster
+            p.update(); p.draw();
             if (p.isPlayer && monster && Math.abs(p.x - monster.x) < 50 && Math.abs(p.y - monster.y) < 50) {
-                p.dead = true;
-                monster.pushBack();
-                damageMonster(20);
-                AudioSys.playExplosion(); 
-                spawnExplosion(p.x, p.y, '#f1c40f');
+                p.dead = true; monster.pushBack(); damageMonster(20);
+                AudioSys.playExplosion(); spawnExplosion(p.x, p.y, '#f1c40f');
             }
-            // Hit Hero
             if (!p.isPlayer && Math.abs(p.x - hero.x) < 40 && Math.abs(p.y - hero.y) < 40) {
-                p.dead = true;
-                damageHero(25);
-                AudioSys.playError(); 
-                spawnExplosion(p.x, p.y, '#e74c3c');
-                document.body.classList.add('shake');
-                setTimeout(() => document.body.classList.remove('shake'), 400);
+                p.dead = true; damageHero(25);
+                AudioSys.playError(); spawnExplosion(p.x, p.y, '#e74c3c');
+                document.body.classList.add('shake'); setTimeout(() => document.body.classList.remove('shake'), 400);
             }
         });
 
@@ -511,81 +496,86 @@
     }
 
     function drawHUD() {
-        // HP Bar
-        ctx.fillStyle = '#222';
-        ctx.fillRect(10, 10, 150, 15);
+        ctx.fillStyle = '#222'; ctx.fillRect(10, 10, 150, 15);
         ctx.fillStyle = GameState.heroHP > 30 ? '#2ecc71' : '#e74c3c';
         ctx.fillRect(10, 10, (GameState.heroHP/100)*150, 15);
-        
-        ctx.fillStyle = '#fff';
-        ctx.font = "12px 'Press Start 2P'";
-        ctx.textAlign = 'left';
+        ctx.fillStyle = '#fff'; ctx.font = "12px 'Press Start 2P'"; ctx.textAlign = 'left';
         ctx.fillText(`LVL ${GameState.level}`, 10, 45);
+        
+        // Timer display (optional, but good for feedback)
+        const elapsed = Math.floor((Date.now() - GameState.startTime) / 1000);
+        ctx.textAlign = 'right';
+        ctx.fillText(`TIME: ${elapsed}s`, canvas.width - 10, 45);
     }
 
-    // --- GAME LOGIC ---
     function damageMonster(amt) {
         if (!monster) return;
         monster.hp -= amt;
         if (monster.hp <= 0) {
-            monster.hp = 0;
-            spawnExplosion(monster.x, monster.y, '#f1c40f', 50);
-            monster = null;
+            monster.hp = 0; spawnExplosion(monster.x, monster.y, '#f1c40f', 50); monster = null;
             setTimeout(() => game.win(), 500);
         }
     }
-
     function damageHero(amt) {
         GameState.heroHP -= amt;
-        if (GameState.heroHP <= 0) {
-            GameState.heroHP = 0;
-            game.lose("SHIELD DEPLETED");
-        }
+        if (GameState.heroHP <= 0) { GameState.heroHP = 0; game.lose("SHIELD DEPLETED"); }
     }
-
-    function spawnExplosion(x, y, color, count=15) {
-        for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
-    }
+    function spawnExplosion(x, y, color, count=15) { for(let i=0; i<count; i++) particles.push(new Particle(x, y, color)); }
 
     const game = {
-        startLevel: function() {
-            AudioSys.init(); 
-            AudioSys.startMusic(); 
-
+        showStats: function() {
             document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+            document.getElementById('stats-screen').classList.remove('hidden');
+        },
+        showHome: function() {
+            document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+            document.getElementById('start-screen').classList.remove('hidden');
+            Storage.updateUI(); 
+        },
+        startLevel: function() {
+            AudioSys.init(); AudioSys.startMusic();
+            document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
+            
             GameState.isRunning = true;
             GameState.heroHP = 100;
+            GameState.level = Storage.data.level;
+            
+            // Session Reset
+            GameState.startTime = Date.now();
+            GameState.sessionHits = 0;
+            GameState.sessionMisses = 0;
+            
             monster = new Monster(GameState.level);
-            projectiles = [];
-            particles = [];
-            
-            // Initial resize to be sure
+            projectiles = []; particles = [];
             resizeCanvas();
-            
             this.nextQuestion();
             animate();
         },
         nextLevel: function() {
-            GameState.level++;
+            Storage.levelUp();
             this.startLevel();
         },
         restartLevel: function() {
             this.startLevel();
         },
-        win: function() {
+        endSession: function(isWin) {
             GameState.isRunning = false;
-            AudioSys.playWin(); 
+            const timeSpent = Math.floor((Date.now() - GameState.startTime) / 1000);
+            Storage.addSession(isWin, GameState.level, GameState.sessionHits, GameState.sessionMisses, timeSpent);
+        },
+        win: function() {
+            this.endSession(true);
+            AudioSys.playWin();
             document.getElementById('win-screen').classList.remove('hidden');
         },
         lose: function(reason) {
-            GameState.isRunning = false;
-            AudioSys.playLose(); 
+            this.endSession(false);
+            AudioSys.playLose();
             document.getElementById('lose-reason').innerText = reason;
             document.getElementById('lose-screen').classList.remove('hidden');
         },
         nextQuestion: function() {
             if (!monster) return;
-            
             let mults = [2,5,10];
             if(GameState.level > 2) mults = [3,4];
             if(GameState.level > 5) mults = [6,7,8,9];
@@ -594,7 +584,6 @@
             const n1 = mults[Math.floor(Math.random()*mults.length)];
             const n2 = Math.floor(Math.random()*9)+2;
             GameState.currentAnswer = n1 * n2;
-            
             document.getElementById('math-problem').innerText = `${n1} × ${n2}`;
             this.generateButtons(GameState.currentAnswer, n1);
         },
@@ -614,17 +603,19 @@
                 const btn = document.createElement('button');
                 btn.className = 'attack-btn';
                 btn.innerText = num;
-                
                 btn.onclick = function() {
                     if(!GameState.isRunning || !monster) return;
-                    
                     if(num === GameState.currentAnswer) {
-                        AudioSys.playShoot(); 
+                        AudioSys.playShoot();
+                        GameState.sessionHits++;
+                        Storage.recordGlobalStats(true);
                         projectiles.push(new Projectile(hero.x, hero.y - 30, true));
                         game.nextQuestion();
                     } else {
-                        AudioSys.playError(); 
-                        monster.pullDown(); 
+                        AudioSys.playError();
+                        GameState.sessionMisses++;
+                        Storage.recordGlobalStats(false);
+                        monster.pullDown();
                         projectiles.push(new Projectile(monster.x, monster.y + 30, false));
                         btn.classList.add('wrong');
                         setTimeout(() => btn.classList.remove('wrong'), 300);
@@ -635,6 +626,8 @@
         }
     };
 
+    // Initialize Storage
+    Storage.load();
     window.game = game;
 
 </script>

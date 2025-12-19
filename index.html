@@ -1,63 +1,91 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dungeon Math Hero: 8-Bit Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <title>Dungeon Math Hero</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Math Hero">
+    
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' style='background:%23111'><rect width='100' height='100' rx='20' fill='%231a1a2e'/><text y='70' x='50' font-size='60' text-anchor='middle'>🛡️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+        :root {
+            --bg-color: #222;
+            --control-bg: #111;
+            --accent: #f1c40f;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            background: #222;
+            padding: 0;
+            background: var(--bg-color);
             color: #fff;
-            font-family: 'Press Start 2P', cursive; /* 8-bit font */
+            font-family: 'Press Start 2P', cursive;
+            
+            /* CRITICAL MOBILE FIXES */
+            height: 100dvh; /* Use dynamic viewport height */
+            width: 100vw;
+            position: fixed; /* Lock body scrolling */
+            overflow: hidden;
+            touch-action: none; /* Disable native touch gestures */
+            
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            touch-action: none;
         }
 
         #game-wrapper {
             position: relative;
             width: 100%;
-            max-width: 600px;
             height: 100%;
+            max-width: 600px; /* Tablet limit */
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* Stack Canvas on top of Controls */
             border-left: 2px solid #333;
             border-right: 2px solid #333;
         }
 
-        /* --- CANVAS --- */
+        /* --- CANVAS (FLEX GROW) --- */
         canvas {
             background: radial-gradient(circle at bottom, #2b1d3d 0%, #000 100%);
             width: 100%;
-            flex-grow: 1; 
+            flex-grow: 1; /* This makes the canvas take ALL available space remaining */
+            height: 0; /* Crucial: allows flex-grow to work properly */
             display: block;
             border-bottom: 4px solid #000;
             image-rendering: pixelated;
         }
 
-        /* --- CONTROLS --- */
+        /* --- CONTROLS (FIXED BOTTOM) --- */
         #controls-area {
-            height: 35%;
-            min-height: 220px;
-            background: #111;
-            padding: 15px;
+            /* Let controls define their own height based on content */
+            flex-shrink: 0; 
+            background: var(--control-bg);
             display: flex;
             flex-direction: column;
             justify-content: center;
             border-top: 4px solid #444;
+            
+            padding: 10px 15px;
+            /* Extra padding for iPhone Home Bar (The swipe line) */
+            padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
         }
 
         #math-problem {
             text-align: center;
-            font-size: 2rem;
-            color: #f1c40f;
-            margin-bottom: 15px;
+            font-size: 1.5rem; /* Slightly smaller */
+            color: var(--accent);
+            margin-bottom: 10px;
             text-shadow: 4px 4px 0 #000;
             letter-spacing: 2px;
         }
@@ -65,24 +93,34 @@
         .buttons-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            height: 100%;
+            gap: 10px;
+            width: 100%;
+            /* Limit height of buttons area so it fits on small screens */
+            height: 120px; 
         }
 
         .attack-btn {
             background: #3498db;
             border: 4px solid #2980b9;
-            box-shadow: inset 4px 4px 0 rgba(255,255,255,0.3), 4px 4px 0 #000;
-            border-radius: 4px;
-            font-size: 1.5rem;
+            box-shadow: inset 3px 3px 0 rgba(255,255,255,0.3), 3px 3px 0 #000;
+            border-radius: 8px;
+            font-size: 1.2rem; /* Smaller font for buttons */
             font-family: 'Press Start 2P', cursive;
             color: #fff;
             cursor: pointer;
             position: relative;
+            
+            /* Improve touch response */
+            touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        
         .attack-btn:active { 
-            transform: translate(4px, 4px); 
-            box-shadow: none; 
+            transform: translate(2px, 2px); 
+            box-shadow: inset 1px 1px 0 rgba(255,255,255,0.3), 1px 1px 0 #000;
         }
         
         .attack-btn.wrong {
@@ -91,14 +129,16 @@
             animation: shakeBtn 0.3s;
         }
 
-        /* --- HUD ELEMENTS --- */
+        /* --- HUD --- */
         .mute-btn {
             position: absolute;
-            top: 10px; right: 10px;
-            font-size: 20px;
+            top: max(10px, env(safe-area-inset-top)); /* Safe area for top notch */
+            right: 10px;
+            font-size: 24px;
+            padding: 10px;
             cursor: pointer;
             z-index: 50;
-            opacity: 0.5;
+            opacity: 0.6;
         }
 
         /* --- OVERLAYS --- */
@@ -112,14 +152,15 @@
             justify-content: center;
             z-index: 20;
             text-align: center;
+            padding: 20px;
         }
         .hidden { display: none !important; }
         
-        h1 { color: #f1c40f; font-size: 1.8rem; line-height: 1.5; margin-bottom: 20px; text-shadow: 4px 4px 0 #c0392b; }
+        h1 { color: var(--accent); font-size: 1.5rem; line-height: 1.5; margin-bottom: 20px; text-shadow: 4px 4px 0 #c0392b; }
         p { line-height: 1.5; color: #aaa; font-size: 0.8rem; margin-bottom: 30px; }
         
         .big-btn {
-            padding: 20px 30px; 
+            padding: 15px 25px; 
             font-size: 1rem; 
             font-family: 'Press Start 2P', cursive;
             background: #2ecc71; 
@@ -128,8 +169,8 @@
             box-shadow: inset 4px 4px 0 rgba(255,255,255,0.4), 4px 4px 0 #000;
             cursor: pointer; 
             margin-top: 20px;
+            -webkit-tap-highlight-color: transparent;
         }
-        .big-btn:hover { background: #27ae60; color: #fff; }
 
         .shake { animation: shakeAnim 0.4s; }
         @keyframes shakeAnim {
@@ -148,7 +189,7 @@
     <canvas id="gameCanvas"></canvas>
     
     <div id="controls-area">
-        <div id="math-problem">PRESS START</div>
+        <div id="math-problem">START</div>
         <div id="buttons-grid" class="buttons-grid"></div>
     </div>
 
@@ -177,13 +218,13 @@
     const AudioSys = {
         ctx: null,
         isMuted: false,
-        bgmOscillators: [],
         bgmInterval: null,
         bgmNoteIndex: 0,
         
         init: function() {
             if (!this.ctx) {
-                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
             }
             if (this.ctx.state === 'suspended') {
                 this.ctx.resume();
@@ -197,7 +238,6 @@
             else if (GameState.isRunning) this.startMusic();
         },
 
-        // Simple Wave Generator (Square = NES sound)
         playTone: function(freq, type, duration, vol=0.1) {
             if (this.isMuted || !this.ctx) return;
             const osc = this.ctx.createOscillator();
@@ -212,19 +252,15 @@
             osc.stop(this.ctx.currentTime + duration);
         },
 
-        // SFX LIBRARY
         playShoot: function() {
             if (this.isMuted || !this.ctx) return;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'square';
-            // Frequency sweep for "Pew" sound
             osc.frequency.setValueAtTime(600, this.ctx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.15);
-            
             gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
             gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.15);
-            
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start();
@@ -232,14 +268,12 @@
         },
 
         playExplosion: function() {
-            // Low square wave + dissonance simulates 8-bit noise/crunch
             this.playTone(100, 'sawtooth', 0.2, 0.2);
             this.playTone(80, 'square', 0.2, 0.2);
             this.playTone(60, 'sawtooth', 0.3, 0.2);
         },
 
         playError: function() {
-            // Descending "Bloop"
             if (this.isMuted || !this.ctx) return;
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
@@ -256,7 +290,6 @@
 
         playWin: function() {
             this.stopMusic();
-            // Victory Fanfare (C - E - G - C)
             setTimeout(() => this.playTone(523.25, 'square', 0.1), 0);
             setTimeout(() => this.playTone(659.25, 'square', 0.1), 150);
             setTimeout(() => this.playTone(783.99, 'square', 0.1), 300);
@@ -265,36 +298,25 @@
 
         playLose: function() {
             this.stopMusic();
-            // Sad descending tritone
             setTimeout(() => this.playTone(300, 'triangle', 0.3), 0);
             setTimeout(() => this.playTone(280, 'triangle', 0.3), 300);
             setTimeout(() => this.playTone(200, 'triangle', 0.8), 600);
         },
 
-        // BACKGROUND MUSIC SEQUENCER
         startMusic: function() {
             if (this.isMuted || !this.ctx || this.bgmInterval) return;
-            
-            // Simple Arpeggio Pattern (C Major -> A Minor)
             const bassLine = [130.81, 130.81, 196.00, 130.81, 220.00, 220.00, 164.81, 196.00];
             const leadLine = [523.25, 0, 659.25, 0, 783.99, 659.25, 523.25, 0];
-            
             this.bgmNoteIndex = 0;
-            const tempo = 250; // ms per note
-
+            const tempo = 250; 
             this.bgmInterval = setInterval(() => {
                 if(!GameState.isRunning) return;
-
-                // Bass
                 const bassFreq = bassLine[this.bgmNoteIndex % bassLine.length];
-                this.playTone(bassFreq, 'triangle', 0.2, 0.15); // Triangle for bass
-                
-                // Lead (only if not 0)
+                this.playTone(bassFreq, 'triangle', 0.2, 0.15); 
                 const leadFreq = leadLine[this.bgmNoteIndex % leadLine.length];
                 if(leadFreq > 0) {
-                    this.playTone(leadFreq, 'square', 0.1, 0.05); // Square for lead
+                    this.playTone(leadFreq, 'square', 0.1, 0.05); 
                 }
-
                 this.bgmNoteIndex++;
             }, tempo);
         },
@@ -315,10 +337,12 @@
 
     function resizeCanvas() {
         const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+        // Force integer values for crisp pixel art
+        canvas.width = Math.floor(rect.width);
+        canvas.height = Math.floor(rect.height);
     }
     window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
     resizeCanvas();
 
     const GameState = {
@@ -438,7 +462,7 @@
 
         // Danger Zone
         if (monster && monster.y > canvas.height * 0.65) {
-            if(frames % 20 < 10) { // Flashing effect
+            if(frames % 20 < 10) { 
                 ctx.fillStyle = "rgba(231, 76, 60, 0.2)";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
@@ -464,14 +488,14 @@
                 p.dead = true;
                 monster.pushBack();
                 damageMonster(20);
-                AudioSys.playExplosion(); // SOUND
+                AudioSys.playExplosion(); 
                 spawnExplosion(p.x, p.y, '#f1c40f');
             }
             // Hit Hero
             if (!p.isPlayer && Math.abs(p.x - hero.x) < 40 && Math.abs(p.y - hero.y) < 40) {
                 p.dead = true;
                 damageHero(25);
-                AudioSys.playError(); // SOUND
+                AudioSys.playError(); 
                 spawnExplosion(p.x, p.y, '#e74c3c');
                 document.body.classList.add('shake');
                 setTimeout(() => document.body.classList.remove('shake'), 400);
@@ -525,8 +549,8 @@
 
     const game = {
         startLevel: function() {
-            AudioSys.init(); // Initialize Audio Context
-            AudioSys.startMusic(); // Start BGM
+            AudioSys.init(); 
+            AudioSys.startMusic(); 
 
             document.querySelectorAll('.overlay').forEach(el => el.classList.add('hidden'));
             GameState.isRunning = true;
@@ -534,6 +558,10 @@
             monster = new Monster(GameState.level);
             projectiles = [];
             particles = [];
+            
+            // Initial resize to be sure
+            resizeCanvas();
+            
             this.nextQuestion();
             animate();
         },
@@ -542,18 +570,16 @@
             this.startLevel();
         },
         restartLevel: function() {
-            // Check if game over to reset score/level logic if desired, 
-            // for now just restart current level
             this.startLevel();
         },
         win: function() {
             GameState.isRunning = false;
-            AudioSys.playWin(); // SOUND
+            AudioSys.playWin(); 
             document.getElementById('win-screen').classList.remove('hidden');
         },
         lose: function(reason) {
             GameState.isRunning = false;
-            AudioSys.playLose(); // SOUND
+            AudioSys.playLose(); 
             document.getElementById('lose-reason').innerText = reason;
             document.getElementById('lose-screen').classList.remove('hidden');
         },
@@ -593,11 +619,11 @@
                     if(!GameState.isRunning || !monster) return;
                     
                     if(num === GameState.currentAnswer) {
-                        AudioSys.playShoot(); // SOUND
+                        AudioSys.playShoot(); 
                         projectiles.push(new Projectile(hero.x, hero.y - 30, true));
                         game.nextQuestion();
                     } else {
-                        AudioSys.playError(); // SOUND
+                        AudioSys.playError(); 
                         monster.pullDown(); 
                         projectiles.push(new Projectile(monster.x, monster.y + 30, false));
                         btn.classList.add('wrong');
